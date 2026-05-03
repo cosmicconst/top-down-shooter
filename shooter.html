@@ -376,7 +376,7 @@ class Game {
       const [type, sm] = this.spawnQueue[this.spawnIdx++];
       const side = Math.floor(Math.random() * 4);
       const x = side === 0 ? Math.random() * W : side === 1 ? Math.random() * W : side === 2 ? -15 : W + 15;
-      const y = side === 0 ? -15 : side === 1 ? H + 15 : Math.random() * H : Math.random() * H;
+      const y = side === 0 ? -15 : side === 1 ? H + 15 : side === 2 ? Math.random() * H : Math.random() * H;
       this.enemies.push(new Enemy(x, y, type, sm));
       this.spawnTimer = 0.28;
     }
