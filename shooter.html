@@ -355,8 +355,12 @@ class Game {
     if (this.state === 'levelClear') {
       this.stateTimer -= dt;
       if (this.stateTimer <= 0) {
-        this.level = Math.min(this.level + 1, LEVELS.length);
-        this.wave = 0; this.state = 'playing'; this.beginWave();
+        if (this.level >= LEVELS.length) {
+          if (this.score > this.highScore) { this.highScore = this.score; localStorage.setItem('tds_hi', this.highScore); }
+          this.state = 'victory';
+        } else {
+          this.level++; this.wave = 0; this.state = 'playing'; this.beginWave();
+        }
       }
     }
     if (this.state !== 'playing') {
@@ -489,6 +493,7 @@ class Game {
     this.renderHUD(ctx);
     if (this.state === 'waveClear')  this.renderWaveClear(ctx);
     if (this.state === 'levelClear') this.renderLevelClear(ctx);
+    if (this.state === 'victory')    this.renderVictory(ctx);
   }
 
   renderHUD(ctx) {
@@ -510,7 +515,7 @@ class Game {
     ctx.fillText(`LEVEL ${this.level}`, W/2, 10);
     ctx.font = '12px monospace'; ctx.fillStyle = '#00cc00';
     const totalW = this.totalWaves();
-    ctx.fillText(`WAVE ${this.wave} / ${totalW}`, W/2, 28);
+    ctx.fillText(`WAVE ${Math.min(this.wave, totalW)} / ${totalW}`, W/2, 28);
 
     // Enemy count
     const remaining = this.enemies.length + (this.spawnQueue.length - this.spawnIdx);
@@ -543,7 +548,22 @@ class Game {
     ctx.fillStyle = '#ffff00'; ctx.font = '22px monospace';
     ctx.fillText(`Score: ${this.score}`, W/2, H/2);
     ctx.fillStyle = '#00cc00'; ctx.font = '14px monospace';
-    ctx.fillText(`Entering Level ${Math.min(this.level + 1, LEVELS.length)}...`, W/2, H/2 + 40);
+    const nextMsg = this.level >= LEVELS.length ? 'All levels cleared!' : `Entering Level ${this.level + 1}...`;
+    ctx.fillText(nextMsg, W/2, H/2 + 40);
+    ctx.textAlign = 'left';
+  }
+
+  renderVictory(ctx) {
+    ctx.fillStyle = 'rgba(0,0,20,0.92)'; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffff00'; ctx.font = 'bold 56px monospace';
+    ctx.fillText('YOU WIN!', W/2, H/2 - 90);
+    ctx.fillStyle = '#00ff88'; ctx.font = '22px monospace';
+    ctx.fillText(`FINAL SCORE  ${this.score}`, W/2, H/2 - 20);
+    ctx.fillStyle = '#ffff44'; ctx.font = '16px monospace';
+    ctx.fillText(`HIGH SCORE  ${this.highScore}`, W/2, H/2 + 20);
+    ctx.fillStyle = '#888'; ctx.font = '13px monospace';
+    ctx.fillText('Click or press R to play again', W/2, H/2 + 72);
     ctx.textAlign = 'left';
   }
 }
@@ -568,7 +588,7 @@ function restart() {
 // ─── INPUT ─────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   keys[e.key] = true;
-  if ((e.key === 'r' || e.key === 'R') && game.state === 'gameOver') restart();
+  if ((e.key === 'r' || e.key === 'R') && (game.state === 'gameOver' || game.state === 'victory')) restart();
 });
 document.addEventListener('keyup', e => { keys[e.key] = false; });
 
@@ -582,7 +602,7 @@ document.addEventListener('mousedown', () => {
   if (game.state === 'menu') {
     document.getElementById('menuScreen').style.display = 'none';
     game.start();
-  } else if (game.state === 'gameOver') {
+  } else if (game.state === 'gameOver' || game.state === 'victory') {
     restart();
   } else {
     mouseDown = true;
